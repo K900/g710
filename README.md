@@ -2,22 +2,18 @@ This repository contains some proof of concept code for talking to the [Logitech
 
 Working
 =======
-* G1-G6 keys (somewhat, see below)
+* G1-G6 keys
 * M1-MR keys
+* Media keys
+* M1-MR key backlight (write only)
 * Game mode (events only)
 * Backlight (events only)
-* Media keys
-* M1-MR key backlight
-
-Known issues
-============
-* G1-G6 keys send 'ghost' input -- numbers 1 to 6 (same on Windows VM without drivers?!)
 
 Won't fix
 =========
 * Macro recording, Logitech drivers do it in userspace
-* Read/write backlight levels, game mode on demand, unless someone finds the magic control transfer data
+* Read/write backlight levels, read M keys backlight, game mode on demand, unless someone finds the magic control transfer data
 
 Protocol
 ========
-See `read.py`, proper documentation will come later.
+See the source, proper documentation will come later.

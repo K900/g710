@@ -17,6 +17,15 @@ class G710Context():
                         if endpoint.bEndpointAddress == 130:
                             self.endpoint = endpoint
 
+            # Stop ghost input
+            self.device.ctrl_transfer(
+                bmRequestType=0x21,
+                bRequest=0x09,
+                wValue=0x0309,
+                wIndex=1,
+                data_or_wLength=[0x00] * 13
+            )
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

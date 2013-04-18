@@ -1,5 +1,6 @@
 import g710
 
+
 def make_bitmask(m1, m2, m3, mr):
     result = 0
 
@@ -13,6 +14,7 @@ def make_bitmask(m1, m2, m3, mr):
         result += 0x80
 
     return result
+
 
 with g710.G710Context() as context:
     values = []
@@ -28,9 +30,9 @@ with g710.G710Context() as context:
                 break
 
     context.device.ctrl_transfer(
-        bmRequestType = 0x21,
-        bRequest = 0x09,
-        wValue = 0x0306,
-        wIndex = 1,
-        data_or_wLength = [0x06, make_bitmask(*values)]
+        bmRequestType=0x21,
+        bRequest=0x09,
+        wValue=0x0306,
+        wIndex=1,
+        data_or_wLength=[0x06, make_bitmask(*values)]
     )
