@@ -1,3 +1,4 @@
+from __future__ import print_function
 import usb.core
 import g710
 
@@ -56,7 +57,9 @@ with g710.G710Context() as context:
 
     while True:
         try:
-            packet_id, *data = endpoint.read(endpoint.wMaxPacketSize, timeout=1000)
+            data = endpoint.read(endpoint.wMaxPacketSize, timeout=1000)
+            packet_id = data[0]
+            data = data[1:]
         except usb.core.USBError as ex:
             if ex.errno == 110:
                 print("Timed out, exiting!")

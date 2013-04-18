@@ -1,5 +1,9 @@
-import g710
+from __future__ import print_function
+import sys
+if sys.version_info.major == 2:
+    input = raw_input
 
+import g710
 
 def make_bitmask(m1, m2, m3, mr):
     result = 0
