@@ -107,7 +107,7 @@ class Backlight():
 class G710():
     @property
     def game_mode(self):
-        # TODO this is not writable, WTF?
+        # TODO this is not writable and returns a bunch of weird numbers, WTF?
         data = self.device.ctrl_transfer(
             bmRequestType=0xa1,
             bRequest=0x01,
@@ -232,6 +232,7 @@ class G710Reader():
 
                 if packet_id == 4:
                     for observer in self._observers:
+                        # TODO what do bytes 3-7 mean?
                         observer.status_change(bool(data[0]), data[1], data[2])
                 else:
                     for data_byte, old_byte, keys in zip(data, old_data[packet_id], keymap[packet_id]):
