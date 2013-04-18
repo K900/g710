@@ -23,18 +23,6 @@ def read_ctrl(device, wValue, wLength):
 
 
 class Backlight():
-    # TODO investigate: there are two backlight wValues
-    # 0x0308 is what I'm using now, and it works fine
-    # 0x0307 is the other one, and it seems to allow more control at the cost of 'breaking' buttons
-    # data_or_wlength for 0x307 is [0x07, (WASD pair), (other pair)]
-    # Values are paired, the second one is brightness, the first one is ???
-    # Default value pairs:
-    # [0, 32]
-    # [143, 17]
-    # [223, 7]
-    # [223, 1]
-    # [0, 0]
-
     _values = {
         'm1': False,
         'm2': False,
