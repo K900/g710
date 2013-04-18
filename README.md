@@ -2,12 +2,12 @@ This repository contains some proof of concept code for talking to the [Logitech
 
 Working
 =======
-* G1-G6 keys
-* M1-MR keys
-* Media keys
-* M1-MR key backlight
-* Game mode (read only)
-* Backlight
+* G1-G6 key events
+* M1-MR key events
+* Media key events
+* M1-MR per key backlight - events, read, write
+* WASD/other keys backlight - events, read, write
+* 'Game mode' - events, read
 
 Known issues
 ============
