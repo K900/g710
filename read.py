@@ -70,10 +70,11 @@ with g710.G710Context() as context:
         else:
             for data_byte, old_byte, keys in zip(data, old_data[packet_id], keymap[packet_id]):
                 for mask in keys:
-                    if data_byte & mask:
-                        if not (old_byte & mask):
-                            print(keys[mask], "DOWN")
-                    elif old_byte & mask:
+                    is_down = data_byte & mask
+                    was_down = old_byte & mask
+                    if not was_down and is_down:
+                        print(keys[mask], "DOWN")
+                    if was_down and not is_down:
                         print(keys[mask], "UP")
 
             old_data[packet_id] = data
