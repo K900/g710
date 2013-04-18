@@ -31,11 +31,15 @@ class Backlight():
 
     def __setitem__(self, key, value):
         if key in self._values.keys():
-            if (value is True) or (value is False):
-                self._values[key] = value
-                self._write()
+            if key in ["WASD", "keys"]:
+                if 0 <= int(value) <= 4:
+                    self._values[key] = int(value)
+                else:
+                    raise ValueError
             else:
-                raise TypeError
+                self._values[key] = bool(value)
+                
+            self._write()
         else:
             raise KeyError
 
