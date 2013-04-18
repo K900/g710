@@ -36,21 +36,22 @@ class Backlight():
     # [0, 0]
 
     _values = {
-        'M1': False,
-        'M2': False,
-        'M3': False,
-        'MR': False,
-        'WASD': 0,
+        'm1': False,
+        'm2': False,
+        'm3': False,
+        'mr': False,
+        'wasd': 0,
         'keys': 0,
     }
 
     def __getitem__(self, item):
         self._read()
-        return self._values[item]
+        return self._values[item.lower()]
 
     def __setitem__(self, key, value):
+        key = key.lower()
         if key in self._values.keys():
-            if key in ['WASD', 'keys']:
+            if key in ['wasd', 'keys']:
                 if 0 <= int(value) <= 4:
                     self._values[key] = int(value)
                 else:
@@ -69,20 +70,20 @@ class Backlight():
         data = self._read_ctrl(0x0306, 2)
 
         if data[1] & 0x10:
-            self._values['M1'] = True
+            self._values['m1'] = True
 
         if data[1] & 0x20:
-            self._values['M2'] = True
+            self._values['m2'] = True
 
         if data[1] & 0x40:
-            self._values['M3'] = True
+            self._values['m3'] = True
 
         if data[1] & 0x80:
-            self._values['MR'] = True
+            self._values['mr'] = True
 
         data = self._read_ctrl(0x0308, 4)
 
-        self._values['WASD'] = 4 - data[1]
+        self._values['wasd'] = 4 - data[1]
         self._values['keys'] = 4 - data[2]
 
     def _write_ctrl(self, wValue, data):
@@ -91,17 +92,17 @@ class Backlight():
     def _write(self):
         bitmask = 0
 
-        if self._values['M1']:
+        if self._values['m1']:
             bitmask += 0x10
-        if self._values['M2']:
+        if self._values['m2']:
             bitmask += 0x20
-        if self._values['M3']:
+        if self._values['m3']:
             bitmask += 0x40
-        if self._values['MR']:
+        if self._values['mr']:
             bitmask += 0x80
 
         self._write_ctrl(0x0306, [0x06, bitmask])
-        self._write_ctrl(0x0308, [0x08, 4 - self._values['WASD'], 4 - self._values['keys'], 0])
+        self._write_ctrl(0x0308, [0x08, 4 - self._values['wasd'], 4 - self._values['keys'], 0])
 
     def __init__(self, device):
         self.device = device
