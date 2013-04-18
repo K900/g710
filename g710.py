@@ -215,7 +215,7 @@ class G710Reader():
                     data = data[1:]
                 except usb.core.USBError as ex:
                     if ex.errno == 110:
-                        pass
+                        continue
 
                 if packet_id == 4:
                     for observer in self._observers:
