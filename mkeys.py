@@ -6,7 +6,7 @@ if sys.version_info.major == 2:
 
 import g710
 
-with g710.G710() as context:
+with g710.G710Context() as context:
     for i in ['1', '2', '3', 'R']:
         while True:
             value = input('M{} backlight [Y/n]: '.format(i)).strip()

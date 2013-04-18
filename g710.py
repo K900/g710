@@ -38,7 +38,7 @@ class Backlight():
                     raise ValueError
             else:
                 self._values[key] = bool(value)
-                
+
             self._write()
         else:
             raise KeyError
@@ -122,7 +122,7 @@ class G710():
         return bool(data[1])
 
 
-    def __enter__(self):
+    def __init__(self):
         self.device = usb.core.find(idVendor=0x046d, idProduct=0xc24d)
 
         if self.device:
@@ -147,12 +147,17 @@ class G710():
 
             self.backlight = Backlight(self.device)
 
-            return self
-
-    def __exit__(self, *_):
+    def __del__(self):
         usb.util.dispose_resources(self.device)
         self.device.attach_kernel_driver(self.interface)
 
+class G710Context():
+    def __enter__(self):
+        self.g710 = G710()
+        return self.g710
+
+    def __exit__(self, *_):
+        del self.g710
 
 class G710Observer():
     def key_up(self, key):
