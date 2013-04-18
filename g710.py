@@ -1,6 +1,23 @@
 import usb.core
 import usb.util
 
+def write_ctrl(device, wValue, data):
+    return device.ctrl_transfer(
+        bmRequestType=0x21,
+        bRequest=0x09,
+        wValue=wValue,
+        wIndex=1,
+        data_or_wLength=data
+    )
+
+def read_ctrl(device, wValue, wLength):
+    return device.ctrl_transfer(
+        bmRequestType=0xa1,
+        bRequest=0x01,
+        wValue=wValue,
+        wIndex=1,
+        data_or_wLength=wLength
+    )
 
 class Backlight():
 
@@ -17,12 +34,12 @@ class Backlight():
     # [0, 0]
 
     _values = {
-        "M1": False,
-        "M2": False,
-        "M3": False,
-        "MR": False,
-        "WASD": 0,
-        "keys": 0,
+        'M1': False,
+        'M2': False,
+        'M3': False,
+        'MR': False,
+        'WASD': 0,
+        'keys': 0,
     }
 
     def __getitem__(self, item):
@@ -31,7 +48,7 @@ class Backlight():
 
     def __setitem__(self, key, value):
         if key in self._values.keys():
-            if key in ["WASD", "keys"]:
+            if key in ['WASD', 'keys']:
                 if 0 <= int(value) <= 4:
                     self._values[key] = int(value)
                 else:
@@ -43,65 +60,46 @@ class Backlight():
         else:
             raise KeyError
 
+    def _read_ctrl(self, wValue, wLength):
+        return read_ctrl(self.device, wValue, wLength)
+
     def _read(self):
-        data = self.device.ctrl_transfer(
-            bmRequestType=0xa1,
-            bRequest=0x01,
-            wValue=0x0306,
-            wIndex=1,
-            data_or_wLength=2
-        )
+        data = self._read_ctrl(0x0306, 2)
 
         if data[1] & 0x10:
-            self._values["M1"] = True
+            self._values['M1'] = True
 
         if data[1] & 0x20:
-            self._values["M2"] = True
+            self._values['M2'] = True
 
         if data[1] & 0x40:
-            self._values["M3"] = True
+            self._values['M3'] = True
 
         if data[1] & 0x80:
-            self._values["MR"] = True
+            self._values['MR'] = True
 
-        data = self.device.ctrl_transfer(
-            bmRequestType=0xa1,
-            bRequest=0x01,
-            wValue=0x0308,
-            wIndex=1,
-            data_or_wLength=4
-        )
+        data = self._read_ctrl(0x0308, 4)
 
-        self._values["WASD"] = data[1]
-        self._values["keys"] = data[2]
+        self._values['WASD'] = 4 - data[1]
+        self._values['keys'] = 4 - data[2]
+
+    def _write_ctrl(self, wValue, data):
+        return write_ctrl(self.device, wValue, data)
 
     def _write(self):
         bitmask = 0
 
-        if self._values["M1"]:
+        if self._values['M1']:
             bitmask += 0x10
-        if self._values["M2"]:
+        if self._values['M2']:
             bitmask += 0x20
-        if self._values["M3"]:
+        if self._values['M3']:
             bitmask += 0x40
-        if self._values["MR"]:
+        if self._values['MR']:
             bitmask += 0x80
 
-        self.device.ctrl_transfer(
-            bmRequestType=0x21,
-            bRequest=0x09,
-            wValue=0x0306,
-            wIndex=1,
-            data_or_wLength=[0x06, bitmask]
-        )
-
-        self.device.ctrl_transfer(
-            bmRequestType=0x21,
-            bRequest=0x09,
-            wValue=0x308,
-            wIndex=1,
-            data_or_wLength=[0x08, self._values["WASD"], self._values["keys"], 0]
-        )
+        self._write_ctrl(0x0306, [0x06, bitmask])
+        self._write_ctrl(0x0308, [0x08, 4 - self._values['WASD'], 4 - self._values['keys'], 0])
 
     def __init__(self, device):
         self.device = device
@@ -112,13 +110,7 @@ class G710():
     @property
     def game_mode(self):
         # TODO this is not writable and returns a bunch of weird numbers, WTF?
-        data = self.device.ctrl_transfer(
-            bmRequestType=0xa1,
-            bRequest=0x01,
-            wValue=0x0305,
-            wIndex=1,
-            data_or_wLength=100
-        )
+        data = read_ctrl(self.device, 0x0305, 2)
         return bool(data[1])
 
 
@@ -137,13 +129,7 @@ class G710():
                             self.endpoint = endpoint
 
             # Stop ghost input
-            self.device.ctrl_transfer(
-                bmRequestType=0x21,
-                bRequest=0x09,
-                wValue=0x0309,
-                wIndex=1,
-                data_or_wLength=[0x00] * 13
-            )
+            write_ctrl(self.device, 0x0309, [0x00]*13)
 
             self.backlight = Backlight(self.device)
 
@@ -174,34 +160,34 @@ class G710Observer():
 keymap = {
     2: [
         {
-            0x01: "Next track",
-            0x02: "Previous track",
-            0x04: "Stop",
-            0x08: "Play",
-            0x10: "Vol. up",
-            0x20: "Vol. down",
-            0x40: "Mute"
+            0x01: 'Next track',
+            0x02: 'Previous track',
+            0x04: 'Stop',
+            0x08: 'Play',
+            0x10: 'Vol. up',
+            0x20: 'Vol. down',
+            0x40: 'Mute'
         }
     ],
     3: [
         {
-            0x01: "G1",
-            0x02: "G2",
-            0x04: "G3",
-            0x08: "G4",
-            0x10: "G5",
-            0x20: "G6"
+            0x01: 'G1',
+            0x02: 'G2',
+            0x04: 'G3',
+            0x08: 'G4',
+            0x10: 'G5',
+            0x20: 'G6'
         },
         {
-            0x10: "M1",
-            0x20: "M2",
-            0x40: "M3",
-            0x80: "MR"
+            0x10: 'M1',
+            0x20: 'M2',
+            0x40: 'M3',
+            0x80: 'MR'
         },
         {
-            0x01: "WASD backlight",
-            0x02: "Keyboard backlight",
-            0x04: "Game mode"
+            0x01: 'WASD backlight',
+            0x02: 'Keyboard backlight',
+            0x04: 'Game mode'
         }
     ]
 }
@@ -221,7 +207,7 @@ class G710Reader():
         self._observers.remove(observer)
 
     def loop(self):
-        with G710() as context:
+        with G710Context() as context:
             endpoint = context.endpoint
 
             old_data = {
@@ -236,13 +222,13 @@ class G710Reader():
                     data = data[1:]
                 except usb.core.USBError as ex:
                     if ex.errno == 110:
-                        print("Timed out, exiting!")
+                        print('Timed out, exiting!')
                         break
 
                 if packet_id == 4:
                     for observer in self._observers:
                         # TODO what do bytes 3-7 mean?
-                        observer.status_change(bool(data[0]), data[1], data[2])
+                        observer.status_change(bool(data[0]), 4 - data[1], 4 - data[2])
                 else:
                     for data_byte, old_byte, keys in zip(data, old_data[packet_id], keymap[packet_id]):
                         for mask in keys:
