@@ -36,7 +36,14 @@ keymap = {
     'M1': 0x1008FF47,
     'M2': 0x1008FF48,
     'M3': 0x1008FF49,
-    'M4': 0x1008FF4A
+    'M4': 0x1008FF4A,
+    'Next track': 0x1008FF17,
+    'Previous track': 0x1008FF16,
+    'Stop': 0x1008FF15,
+    'Play': 0x1008FF14,
+    'Vol. up': 0x1008FF13,
+    'Vol. down': 0x1008FF11,
+    'Mute': 0x1008FF12
 }
 
 
