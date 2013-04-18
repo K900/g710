@@ -2,7 +2,53 @@ import usb.core
 import usb.util
 
 
-class G710Context():
+class KeyBacklight():
+    _values = {
+        "M1": False,
+        "M2": False,
+        "M3": False,
+        "MR": False
+    }
+
+    def __getitem__(self, item):
+        return self._values[item]
+
+    def __setitem__(self, key, value):
+        if key in self._values.keys():
+            if (value is True) or (value is False):
+                self._values[key] = value
+                self._update()
+            else:
+                raise TypeError
+        else:
+            raise KeyError
+
+    def __init__(self, device):
+        self.device = device
+        self._update()
+
+    def _update(self):
+        bitmask = 0
+
+        if self._values["M1"]:
+            bitmask += 0x10
+        if self._values["M2"]:
+            bitmask += 0x20
+        if self._values["M3"]:
+            bitmask += 0x40
+        if self._values["MR"]:
+            bitmask += 0x80
+
+        self.device.ctrl_transfer(
+            bmRequestType=0x21,
+            bRequest=0x09,
+            wValue=0x0306,
+            wIndex=1,
+            data_or_wLength=[0x06, bitmask]
+        )
+
+
+class G710():
     def __enter__(self):
         self.device = usb.core.find(idVendor=0x046d, idProduct=0xc24d)
 
@@ -26,9 +72,112 @@ class G710Context():
                 data_or_wLength=[0x00] * 13
             )
 
-        return self
+            self.backlight = KeyBacklight(self.device)
+
+            return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         usb.util.dispose_resources(self.device)
         self.device.attach_kernel_driver(self.interface)
 
+
+class G710Observer():
+    def key_up(self, key):
+        pass
+
+    def key_down(self, key):
+        pass
+
+    def status_change(self, game_mode, wasd_light, key_light):
+        pass
+
+# Key masks:
+# keymap[packet_id][byte_number] contains all possible mask 'parts' for byte <byte_number> in packet <packet_id>
+keymap = {
+    2: [
+        {
+            0x01: "Next track",
+            0x02: "Previous track",
+            0x04: "Stop",
+            0x08: "Play",
+            0x10: "Vol. up",
+            0x20: "Vol. down",
+            0x40: "Mute"
+        }
+    ],
+    3: [
+        {
+            0x01: "G1",
+            0x02: "G2",
+            0x04: "G3",
+            0x08: "G4",
+            0x10: "G5",
+            0x20: "G6"
+        },
+        {
+            0x10: "M1",
+            0x20: "M2",
+            0x40: "M3",
+            0x80: "MR"
+        },
+        {
+            0x01: "WASD backlight",
+            0x02: "Keyboard backlight",
+            0x04: "Game mode"
+        }
+    ]
+}
+
+
+class G710Reader():
+    _observers = set()
+    _status_handlers = set()
+
+    def add_observer(self, observer):
+        if issubclass(observer.__class__, G710Observer):
+            self._observers.add(observer)
+        else:
+            raise TypeError
+
+    def remove_observer(self, observer):
+        self._observers.remove(observer)
+
+    def loop(self):
+        with G710() as context:
+            endpoint = context.endpoint
+
+            old_data = {
+                2: [0],
+                3: [0, 0, 0]
+            }
+
+            while True:
+                try:
+                    data = endpoint.read(endpoint.wMaxPacketSize, timeout=1000)
+                    packet_id = data[0]
+                    data = data[1:]
+                except usb.core.USBError as ex:
+                    if ex.errno == 110:
+                        print("Timed out, exiting!")
+                        break
+
+                if packet_id == 4:
+                    for observer in self._observers:
+                        observer.status_change(
+                            bool(data[0]),
+                            (4 - data[2]) * 25,
+                            (4 - data[3]) * 25
+                        )
+                else:
+                    for data_byte, old_byte, keys in zip(data, old_data[packet_id], keymap[packet_id]):
+                        for mask in keys:
+                            is_down = data_byte & mask
+                            was_down = old_byte & mask
+                            if not was_down and is_down:
+                                for observer in self._observers:
+                                    observer.key_down(keys[mask])
+                            if was_down and not is_down:
+                                for observer in self._observers:
+                                    observer.key_up(keys[mask])
+
+                    old_data[packet_id] = data
