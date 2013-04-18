@@ -7,15 +7,16 @@ Working
 * Game mode (events only)
 * Backlight (events only)
 * Media keys
+* M1-MR key backlight
 
 Known issues
 ============
-* G1-G6 keys send 'ghost' input -- numbers 1 to 6
-* Read/write backlight levels, game mode on demand
-  
+* G1-G6 keys send 'ghost' input -- numbers 1 to 6 (same on Windows VM without drivers?!)
+
 Won't fix
 =========
 * Macro recording, Logitech drivers do it in userspace
+* Read/write backlight levels, game mode on demand, unless someone finds the magic control transfer data
 
 Protocol
 ========
