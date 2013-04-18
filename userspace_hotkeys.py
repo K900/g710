@@ -8,6 +8,7 @@ import g710
 
 display = Xlib.display.Display()
 
+
 def fake_input_keycode(event, keycode):
     Xlib.ext.xtest.fake_input(display, event, keycode)
     display.sync()

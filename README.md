@@ -5,14 +5,17 @@ Working
 * G1-G6 keys
 * M1-MR keys
 * Media keys
-* M1-MR key backlight (write only)
-* Game mode (events only)
-* Backlight (events only)
+* M1-MR key backlight
+* Game mode (read only)
+* Backlight
+
+Known issues
+============
+* Game mode is not writable (I'm missing something...)
 
 Won't fix
 =========
 * Macro recording, Logitech drivers do it in userspace
-* Read/write backlight levels, read M keys backlight, game mode on demand, unless someone finds the magic control transfer data
 
 Protocol
 ========

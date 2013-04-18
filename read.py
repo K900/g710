@@ -11,8 +11,8 @@ class MyObserver(g710.G710Observer):
 
     def status_change(self, game_mode, wasd_light, key_light):
         print("Game mode ", "ON" if game_mode else "OFF")
-        print("WASD backlight: ", wasd_light)
-        print("Key backlight: ", key_light)
+        print("WASD backlight level: ", 4 - wasd_light)
+        print("Key backlight level: ", 4 - key_light)
 
 
 reader = g710.G710Reader()

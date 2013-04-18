@@ -2,32 +2,76 @@ import usb.core
 import usb.util
 
 
-class KeyBacklight():
+class Backlight():
+
+    # TODO investigate: there are two backlight wValues
+    # 0x0308 is what I'm using now, and it works fine
+    # 0x0307 is the other one, and it seems to allow more control at the cost of 'breaking' buttons
+    # data_or_wlength for 0x307 is [0x07, (WASD pair), (other pair)]
+    # Values are paired, the second one is brightness, the first one is ???
+    # Default value pairs:
+    # [0, 32]
+    # [143, 17]
+    # [223, 7]
+    # [223, 1]
+    # [0, 0]
+
     _values = {
         "M1": False,
         "M2": False,
         "M3": False,
-        "MR": False
+        "MR": False,
+        "WASD": 0,
+        "keys": 0,
     }
 
     def __getitem__(self, item):
+        self._read()
         return self._values[item]
 
     def __setitem__(self, key, value):
         if key in self._values.keys():
             if (value is True) or (value is False):
                 self._values[key] = value
-                self._update()
+                self._write()
             else:
                 raise TypeError
         else:
             raise KeyError
 
-    def __init__(self, device):
-        self.device = device
-        self._update()
+    def _read(self):
+        data = self.device.ctrl_transfer(
+            bmRequestType=0xa1,
+            bRequest=0x01,
+            wValue=0x0306,
+            wIndex=1,
+            data_or_wLength=2
+        )
 
-    def _update(self):
+        if data[1] & 0x10:
+            self._values["M1"] = True
+
+        if data[1] & 0x20:
+            self._values["M2"] = True
+
+        if data[1] & 0x40:
+            self._values["M3"] = True
+
+        if data[1] & 0x80:
+            self._values["MR"] = True
+
+        data = self.device.ctrl_transfer(
+            bmRequestType=0xa1,
+            bRequest=0x01,
+            wValue=0x0308,
+            wIndex=1,
+            data_or_wLength=4
+        )
+
+        self._values["WASD"] = data[1]
+        self._values["keys"] = data[2]
+
+    def _write(self):
         bitmask = 0
 
         if self._values["M1"]:
@@ -47,8 +91,33 @@ class KeyBacklight():
             data_or_wLength=[0x06, bitmask]
         )
 
+        self.device.ctrl_transfer(
+            bmRequestType=0x21,
+            bRequest=0x09,
+            wValue=0x308,
+            wIndex=1,
+            data_or_wLength=[0x08, self._values["WASD"], self._values["keys"], 0]
+        )
+
+    def __init__(self, device):
+        self.device = device
+        self._read()
+
 
 class G710():
+    @property
+    def game_mode(self):
+        # TODO this is not writable, WTF?
+        data = self.device.ctrl_transfer(
+            bmRequestType=0xa1,
+            bRequest=0x01,
+            wValue=0x0305,
+            wIndex=1,
+            data_or_wLength=100
+        )
+        return bool(data[1])
+
+
     def __enter__(self):
         self.device = usb.core.find(idVendor=0x046d, idProduct=0xc24d)
 
@@ -72,11 +141,11 @@ class G710():
                 data_or_wLength=[0x00] * 13
             )
 
-            self.backlight = KeyBacklight(self.device)
+            self.backlight = Backlight(self.device)
 
             return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_):
         usb.util.dispose_resources(self.device)
         self.device.attach_kernel_driver(self.interface)
 
@@ -163,11 +232,7 @@ class G710Reader():
 
                 if packet_id == 4:
                     for observer in self._observers:
-                        observer.status_change(
-                            bool(data[0]),
-                            (4 - data[2]) * 25,
-                            (4 - data[3]) * 25
-                        )
+                        observer.status_change(bool(data[0]), data[1], data[2])
                 else:
                     for data_byte, old_byte, keys in zip(data, old_data[packet_id], keymap[packet_id]):
                         for mask in keys:
