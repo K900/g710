@@ -1,6 +1,7 @@
 import usb.core
 import usb.util
 
+
 def write_ctrl(device, wValue, data):
     return device.ctrl_transfer(
         bmRequestType=0x21,
@@ -9,6 +10,7 @@ def write_ctrl(device, wValue, data):
         wIndex=1,
         data_or_wLength=data
     )
+
 
 def read_ctrl(device, wValue, wLength):
     return device.ctrl_transfer(
@@ -19,8 +21,8 @@ def read_ctrl(device, wValue, wLength):
         data_or_wLength=wLength
     )
 
-class Backlight():
 
+class Backlight():
     # TODO investigate: there are two backlight wValues
     # 0x0308 is what I'm using now, and it works fine
     # 0x0307 is the other one, and it seems to allow more control at the cost of 'breaking' buttons
@@ -129,13 +131,14 @@ class G710():
                             self.endpoint = endpoint
 
             # Stop ghost input
-            write_ctrl(self.device, 0x0309, [0x00]*13)
+            write_ctrl(self.device, 0x0309, [0x00] * 13)
 
             self.backlight = Backlight(self.device)
 
     def __del__(self):
         usb.util.dispose_resources(self.device)
         self.device.attach_kernel_driver(self.interface)
+
 
 class G710Context():
     def __enter__(self):
@@ -144,6 +147,7 @@ class G710Context():
 
     def __exit__(self, *_):
         del self.g710
+
 
 class G710Observer():
     def key_up(self, key):
