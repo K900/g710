@@ -104,7 +104,6 @@ class G710():
         data = read_ctrl(self.device, 0x0305, 2)
         return bool(data[1])
 
-
     def __init__(self):
         self.device = usb.core.find(idVendor=0x046d, idProduct=0xc24d)
 
@@ -130,8 +129,10 @@ class G710():
 
 
 class G710Context():
+    def __init__(self, device=None):
+        self.g710 = device if device else G710()
+
     def __enter__(self):
-        self.g710 = G710()
         return self.g710
 
     def __exit__(self, *_):
@@ -189,6 +190,10 @@ keymap = {
 class G710Reader():
     _observers = set()
     _status_handlers = set()
+    device = None
+
+    def __init__(self, device=None):
+        self.device = device
 
     def add_observer(self, observer):
         if issubclass(observer.__class__, G710Observer):
@@ -200,7 +205,7 @@ class G710Reader():
         self._observers.remove(observer)
 
     def loop(self):
-        with G710Context() as context:
+        with G710Context(self.device) as context:
             endpoint = context.endpoint
 
             old_data = {
